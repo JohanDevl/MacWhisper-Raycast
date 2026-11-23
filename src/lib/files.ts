@@ -1,8 +1,7 @@
-import { Clipboard, getSelectedFinderItems } from "@raycast/api";
+import { getSelectedFinderItems } from "@raycast/api";
 import { statSync } from "node:fs";
 import { readdir, stat } from "node:fs/promises";
 import { basename, dirname, extname, join } from "node:path";
-import { fileURLToPath } from "node:url";
 import { expandHome, OutputFormat } from "./mw";
 
 export const MEDIA_EXTENSIONS = new Set([
@@ -65,14 +64,6 @@ export async function selectedFinderFiles(): Promise<string[]> {
   } catch {
     return [];
   }
-}
-
-/** The file copied to the clipboard (e.g. ⌘C in Finder), if any. */
-export async function clipboardFile(): Promise<string | undefined> {
-  const { file } = await Clipboard.read();
-  if (!file) return undefined;
-  const path = file.startsWith("file://") ? fileURLToPath(file) : file;
-  return isFile(path) ? path : undefined;
 }
 
 /** `<dir>/<name>.<format>` next to the source file. */

@@ -2,9 +2,9 @@
 
 ## [Initial Version] - {PR_MERGE_DATE}
 
-- Transcribe File, Transcribe Finder Selection, Transcribe Clipboard File, Transcribe Latest Recording and Batch Transcribe Folder commands; Transcribe File streams single plain-text transcripts as they are produced
-- Summarize Recording (Raycast AI), Meeting Notes, Chapters & Description, Generate Subtitles, Translate Subtitles and Export Presets commands
+- Transcribe File, Transcribe Finder Selection, Transcribe Latest Recording and Batch Transcribe Folder commands; Transcribe File streams single plain-text transcripts as they are produced
+- Summarize Recording (summary, action items, translation, chapters… with Raycast AI), Generate Subtitles, Translate Subtitles and Export Presets (including Meeting Notes) commands
 - Watch Folder background command
-- Manage Models, Switch Model and Active Model (menu bar) commands
+- Manage Models and Active Model (menu bar) commands
 - Raycast AI tools: transcribe audio, list recent recordings, list models, select model
 - Default language preference set to auto-detect

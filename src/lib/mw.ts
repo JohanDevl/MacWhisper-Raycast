@@ -282,17 +282,6 @@ export async function selectModel(modelId: string): Promise<void> {
   await runMw(["models", "select", modelId]);
 }
 
-/** Finds a downloaded model by exact id, exact name, or a unique partial match on either. */
-export function findModel(models: Model[], query: string): { match?: Model; candidates: Model[] } {
-  const needle = query.trim().toLowerCase();
-  const exact = models.find((model) => model.id.toLowerCase() === needle || model.name.toLowerCase() === needle);
-  if (exact) return { match: exact, candidates: [exact] };
-  const candidates = models.filter(
-    (model) => model.id.toLowerCase().includes(needle) || model.name.toLowerCase().includes(needle),
-  );
-  return { match: candidates.length === 1 ? candidates[0] : undefined, candidates };
-}
-
 export async function getVersion(): Promise<string> {
   const { stdout } = await runMw(["version"]);
   return stdout.trim();

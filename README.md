@@ -12,8 +12,6 @@ The extension is a thin wrapper around the `mw` command-line tool that ships wit
 
 MacWhisper does not need to be open: `mw` starts it on demand (a few seconds on the first call) and leaves it running.
 
-- Raycast Pro for **Summarize Recording**, **Chapters & Description**, **Translate Subtitles** and the `@macwhisper` AI tools
-
 ## Commands
 
 ### Transcribe
@@ -22,28 +20,24 @@ MacWhisper does not need to be open: `mw` starts it on demand (a few seconds on 
 | ------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Transcribe File**             | Pick files, choose model, language, format (txt, srt, vtt, json, csv, md, html, avid), speaker detection and timestamps, then copy, paste or save the transcript.                                                     |
 | **Transcribe Finder Selection** | Transcribe the audio/video files selected in Finder and copy the transcript.                                                                                                                                          |
-| **Transcribe Clipboard File**   | Transcribe the file copied with ⌘C in Finder and put the transcript in the clipboard.                                                                                                                                 |
 | **Transcribe Latest Recording** | Transcribe the newest audio/video file in your recording folders.                                                                                                                                                     |
 | **Batch Transcribe Folder**     | Transcribe a whole folder (optionally recursive) into transcript or subtitle files.                                                                                                                                   |
 | **Watch Folder**                | Background command: once started, new recordings added to a folder get a transcript next to them (checked every 10 minutes; existing files are left alone and MacWhisper is only called when there is something new). |
 
 ### Outputs
 
-| Command                    | Description                                                                                                                                                               |
-| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Summarize Recording**    | Transcribe, then let Raycast AI write a summary, key points and decisions, action items, a translation, a follow-up email, or answer a custom prompt.                     |
-| **Meeting Notes**          | Markdown notes grouped by speaker, with timestamps.                                                                                                                       |
-| **Chapters & Description** | YouTube chapters, a description, title ideas and tags from a timestamped transcript.                                                                                      |
-| **Generate Subtitles**     | SRT or VTT files next to the videos selected in Finder (format, line length and overwrite are command preferences).                                                       |
-| **Translate Subtitles**    | Generate subtitles, translate the text with Raycast AI and keep every timecode, then save `name.<language>.srt`.                                                          |
-| **Export Presets**         | Saved export settings (format, style, grouping, speakers, timestamps, line length, Avid fps). Ships with presets for subtitles, meeting notes, timestamped text and Avid. |
+| Command                 | Description                                                                                                                                                                                |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Summarize Recording** | Transcribe, then let Raycast AI write a summary, key points and decisions, action items, a translation, a follow-up email, YouTube chapters with a description, or answer a custom prompt. |
+| **Generate Subtitles**  | SRT or VTT files next to the videos selected in Finder (format, line length and overwrite are command preferences).                                                                        |
+| **Translate Subtitles** | Generate subtitles, translate the text with Raycast AI and keep every timecode, then save `name.<language>.srt`.                                                                           |
+| **Export Presets**      | Saved export settings (format, style, grouping, speakers, timestamps, line length, Avid fps). Ships with presets for subtitles, meeting notes, timestamped text and Avid.                  |
 
 ### Models
 
 | Command           | Description                                                   |
 | ----------------- | ------------------------------------------------------------- |
 | **Manage Models** | List downloaded models and switch the active one.             |
-| **Switch Model**  | Type part of a model name to switch to it.                    |
 | **Active Model**  | Menu bar item showing the active model, with quick switching. |
 
 ## Raycast AI
