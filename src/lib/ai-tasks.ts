@@ -12,7 +12,7 @@ export const AI_TASKS = {
   "action-items": {
     title: "Action Items",
     prompt:
-      "Extract every action item from this recording as a Markdown checklist. Include the owner and the due date when they are mentioned.",
+      "Extract every action item from this recording as a Markdown checklist. Add the owner and the due date only when the recording mentions them; never write placeholders such as \"Not specified\".",
   },
   translate: {
     title: "Translate",
