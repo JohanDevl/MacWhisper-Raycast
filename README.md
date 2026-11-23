@@ -1,6 +1,6 @@
 # MacWhisper for Raycast
 
-Transcribe audio and video files on-device with [MacWhisper](https://goodsnooze.gumroad.com/l/macwhisper) straight from Raycast, manage your transcription models, and let Raycast AI transcribe for you.
+Transcribe audio and video files on-device with [MacWhisper](https://goodsnooze.gumroad.com/l/macwhisper) straight from Raycast: subtitles, meeting notes, live transcripts, AI summaries, export presets, model switching, and Raycast AI tools.
 
 The extension is a thin wrapper around the `mw` command-line tool that ships with MacWhisper (15.11+).
 
@@ -9,36 +9,61 @@ The extension is a thin wrapper around the `mw` command-line tool that ships wit
 - macOS
 - MacWhisper 15.11 or later, with at least one downloaded model
 - The `mw` CLI, found automatically at `/usr/local/bin/mw` or inside `MacWhisper.app` (override it in the preferences)
+- Raycast Pro for **Summarize Recording** and the `@macwhisper` AI tools
 
 ## Commands
 
+### Transcribe
+
 | Command | Description |
 | --- | --- |
-| **Transcribe File** | Pick one or more files, choose model, language, format (txt, srt, vtt, json, csv, md, html, avid), speaker detection and timestamps, then copy, paste or save the transcript. |
-| **Transcribe Finder Selection** | Transcribe the files selected in Finder and copy the transcript to the clipboard. |
-| **Batch Transcribe Folder** | Transcribe every audio/video file of a folder (optionally recursive) into transcript or subtitle files. |
-| **Manage Models** | List downloaded models, see the active one and switch models. |
+| **Transcribe File** | Pick files, choose model, language, format (txt, srt, vtt, json, csv, md, html, avid), speaker detection and timestamps, then copy, paste or save the transcript. |
+| **Transcribe Finder Selection** | Transcribe the audio/video files selected in Finder and copy the transcript. |
+| **Transcribe Clipboard File** | Transcribe the file copied with ⌘C in Finder and put the transcript in the clipboard. |
+| **Transcribe Latest Recording** | Transcribe the newest audio/video file in your recording folders. |
+| **Live Transcript** | Watch a long recording's transcript appear segment by segment (`--stream`). |
+| **Batch Transcribe Folder** | Transcribe a whole folder (optionally recursive) into transcript or subtitle files. |
+
+### Outputs
+
+| Command | Description |
+| --- | --- |
+| **Summarize Recording** | Transcribe, then let Raycast AI write a summary, key points and decisions, action items, a translation, a follow-up email, or answer a custom prompt. |
+| **Meeting Notes** | Markdown notes grouped by speaker, with timestamps. |
+| **Generate Subtitles** | SRT or VTT files next to the videos selected in Finder (format, line length and overwrite are command preferences). |
+| **Export Presets** | Saved export settings (format, style, grouping, speakers, timestamps, line length, Avid fps). Ships with presets for subtitles, meeting notes, timestamped text and Avid. |
+
+### Models
+
+| Command | Description |
+| --- | --- |
+| **Manage Models** | List downloaded models and switch the active one. |
+| **Switch Model** | Type part of a model name to switch to it. |
+| **Active Model** | Menu bar item showing the active model, with quick switching. |
 
 ## Raycast AI
 
 Mention `@macwhisper` in Raycast AI:
 
 - `@macwhisper transcribe ~/Downloads/interview.m4a`
-- `@macwhisper summarize the recording I selected in Finder`
+- `@macwhisper summarize my latest recording`
+- `@macwhisper who said what in the recording I selected in Finder?`
 - `@macwhisper make French subtitles for ~/Movies/clip.mp4 and save them next to it`
 - `@macwhisper which models do I have? Switch to Whisper Large v3 Turbo`
 
 | Tool | Description |
 | --- | --- |
-| `transcribe-audio` | Transcribe a file (or the Finder selection) and return the transcript, optionally writing it to a file. Asks before overwriting. |
-| `list-models` | List downloaded models, the active model and the MacWhisper version. |
+| `transcribe-audio` | Transcribe a file (or the Finder selection), optionally as subtitles, grouped by speaker, or written to a file. Asks before overwriting. |
+| `list-recent-recordings` | Newest audio/video files in your recording folders. |
+| `list-models` | Downloaded models, the active model and the MacWhisper version. |
 | `select-model` | Change the active model. Asks for confirmation. |
 
 ## Preferences
 
-- **mw CLI Path**: custom path to `mw`.
-- **Default Language**: ISO 639-1 code or `auto`; empty uses MacWhisper's setting.
+- **Default Language**: spoken language used by default. Auto-detect out of the box.
+- **Recording Folders**: folders searched for your latest recording (default `~/Downloads, ~/Desktop, ~/Movies, ~/Documents/Zoom`).
 - **History**: also save transcriptions to MacWhisper's history (`--persist`).
+- **mw CLI Path**: custom path to `mw`.
 
 ## Development
 

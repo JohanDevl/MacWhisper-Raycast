@@ -1,17 +1,14 @@
 import { Action, ActionPanel, Alert, confirmAlert, Detail, Icon, open, showToast, Toast } from "@raycast/api";
 import { existsSync } from "node:fs";
 import { writeFile } from "node:fs/promises";
-import { basename, dirname, extname, join } from "node:path";
+import { basename, dirname } from "node:path";
+import { sidecarPath } from "../lib/files";
 import { errorMessage, MACWHISPER_BUNDLE_ID, OutputFormat } from "../lib/mw";
 
 export type TranscriptResult = {
   path: string;
   transcript: string;
 };
-
-function sidecarPath(path: string, format: OutputFormat): string {
-  return join(dirname(path), `${basename(path, extname(path))}.${format}`);
-}
 
 async function saveNextToSource(result: TranscriptResult, format: OutputFormat) {
   const target = sidecarPath(result.path, format);

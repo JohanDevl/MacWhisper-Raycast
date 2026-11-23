@@ -1,7 +1,16 @@
-import { getSelectedFinderItems, Tool } from "@raycast/api";
-import { existsSync, statSync } from "node:fs";
+import { Tool } from "@raycast/api";
+import { existsSync } from "node:fs";
 import { basename } from "node:path";
-import { expandHome, OUTPUT_FORMATS, OutputFormat, transcribeFile, transcribeFileTo } from "../lib/mw";
+import { isDirectory, selectedFinderFiles } from "../lib/files";
+import {
+  expandHome,
+  OUTPUT_FORMATS,
+  OutputFormat,
+  transcribeFile,
+  transcribeFileTo,
+  TranscribeOptions,
+} from "../lib/mw";
+import { MEETING_NOTES_OPTIONS } from "../lib/presets";
 
 const MAX_TRANSCRIPT_CHARS = 200_000;
 
@@ -22,6 +31,11 @@ type Input = {
   /** Whether to detect and label the different speakers. */
   speakers?: boolean;
   /**
+   * Set to true for meetings, interviews or calls: detects speakers and returns a Markdown transcript grouped by speaker.
+   * Overrides format and speakers.
+   */
+  groupBySpeaker?: boolean;
+  /**
    * Absolute path of a file to write the transcript to, only when the user explicitly asks to save it.
    * Only valid when transcribing a single file.
    */
@@ -33,14 +47,20 @@ function normalizeFormat(format?: string): OutputFormat {
   return OUTPUT_FORMATS.find((value) => value === candidate) ?? "txt";
 }
 
+function toOptions(input: Input): TranscribeOptions {
+  const base: TranscribeOptions = {
+    format: normalizeFormat(input.format),
+    language: input.language,
+    model: input.model,
+    timestamps: input.timestamps,
+    speakers: input.speakers,
+  };
+  return input.groupBySpeaker ? { ...base, ...MEETING_NOTES_OPTIONS } : base;
+}
+
 async function resolveTargets(path?: string): Promise<string[]> {
   if (path?.trim()) return [expandHome(path.trim())];
-  try {
-    const items = await getSelectedFinderItems();
-    return items.map((item) => item.path).filter((item) => statSync(item).isFile());
-  } catch {
-    return [];
-  }
+  return selectedFinderFiles();
 }
 
 export const confirmation: Tool.Confirmation<Input> = async (input) => {
@@ -64,19 +84,13 @@ export default async function tool(input: Input) {
   if (targets.length === 0) {
     return "No file to transcribe: no path was given and nothing is selected in Finder.";
   }
-  const folder = targets.find((target) => existsSync(target) && statSync(target).isDirectory());
+  const folder = targets.find(isDirectory);
   if (folder) {
     return `${folder} is a folder. Ask for a specific audio or video file, or use the Batch Transcribe Folder command.`;
   }
 
-  const format = normalizeFormat(input.format);
-  const options = {
-    format,
-    language: input.language,
-    model: input.model,
-    timestamps: input.timestamps,
-    speakers: input.speakers,
-  };
+  const options = toOptions(input);
+  const format = options.format ?? "txt";
 
   if (input.outputPath) {
     if (targets.length > 1) return "outputPath can only be used when transcribing a single file.";

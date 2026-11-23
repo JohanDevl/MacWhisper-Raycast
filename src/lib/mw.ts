@@ -1,5 +1,5 @@
 import { getPreferenceValues } from "@raycast/api";
-import { execFile } from "node:child_process";
+import { execFile, spawn } from "node:child_process";
 import { existsSync } from "node:fs";
 import { homedir } from "node:os";
 import { promisify } from "node:util";
@@ -15,16 +15,32 @@ const MAX_BUFFER = 100 * 1024 * 1024;
 export const OUTPUT_FORMATS = ["txt", "srt", "vtt", "json", "csv", "md", "html", "avid"] as const;
 export type OutputFormat = (typeof OUTPUT_FORMATS)[number];
 
+export const EXPORT_STYLES = ["transcript", "subtitles", "segments"] as const;
+export type ExportStyle = (typeof EXPORT_STYLES)[number];
+
+export const GROUPINGS = ["none", "words", "sentences", "people"] as const;
+export type Grouping = (typeof GROUPINGS)[number];
+
 export type TranscribeOptions = {
   /** Model in `engine:model-id` form. Empty means the app's current model. */
   model?: string;
-  /** ISO 639-1 code or `auto`. Empty means the app's current language. */
+  /** ISO 639-1 code or `auto`. Empty falls back to the Default Language preference. */
   language?: string;
   format?: OutputFormat;
+  style?: ExportStyle;
+  /** Only valid with the `transcript` style. */
+  group?: Grouping;
   /** Undefined keeps the app's setting. */
   speakers?: boolean;
+  /** Undefined keeps the default (on when the transcript is diarized). */
+  speakerNames?: boolean;
   /** Undefined keeps the style's setting. */
   timestamps?: boolean;
+  endTimestamps?: boolean;
+  milliseconds?: boolean;
+  maxCharsPerLine?: number;
+  /** Only affects the `avid` format. */
+  fps?: number;
   persist?: boolean;
 };
 
@@ -69,8 +85,7 @@ export function resolveBinary(): string {
   return found;
 }
 
-function extractErrorMessage(error: unknown): string {
-  const stderr = (error as { stderr?: string }).stderr ?? "";
+function errorFromStderr(stderr: string, fallback: string): string {
   const lines = stderr
     .split("\n")
     .map((line) => line.trim())
@@ -78,14 +93,18 @@ function extractErrorMessage(error: unknown): string {
   const errorLine = lines.find((line) => line.startsWith("Error:"));
   if (errorLine) return errorLine.replace(/^Error:\s*/, "");
   if (lines.length > 0) return lines[lines.length - 1];
-  return error instanceof Error ? error.message : String(error);
+  return fallback;
 }
 
-async function runMw(args: string[]): Promise<string> {
+function extractErrorMessage(error: unknown): string {
+  const stderr = (error as { stderr?: string }).stderr ?? "";
+  return errorFromStderr(stderr, error instanceof Error ? error.message : String(error));
+}
+
+async function runMw(args: string[]): Promise<{ stdout: string; stderr: string }> {
   const binary = resolveBinary();
   try {
-    const { stdout } = await execFileAsync(binary, args, { maxBuffer: MAX_BUFFER });
-    return stdout;
+    return await execFileAsync(binary, args, { maxBuffer: MAX_BUFFER });
   } catch (error) {
     throw new MacWhisperError(extractErrorMessage(error));
   }
@@ -95,19 +114,28 @@ function transcribeArgs(options: TranscribeOptions): string[] {
   const { defaultLanguage, saveToHistory } = getPreferenceValues<Preferences>();
   const args: string[] = [];
   const model = options.model?.trim();
-  const language = (options.language?.trim() || defaultLanguage)?.trim();
+  const language = options.language?.trim() || defaultLanguage?.trim();
   if (model) args.push("--model", model);
   if (language) args.push("--language", language);
   if (options.format) args.push("--format", options.format);
+  if (options.style) args.push("--style", options.style);
+  if (options.group && options.style === "transcript") args.push("--group", options.group);
   if (options.speakers !== undefined) args.push(options.speakers ? "--speakers" : "--no-speakers");
+  if (options.speakerNames !== undefined) args.push(options.speakerNames ? "--speaker-names" : "--no-speaker-names");
   if (options.timestamps !== undefined) args.push(options.timestamps ? "--timestamps" : "--no-timestamps");
+  if (options.endTimestamps) args.push("--end-timestamps");
+  if (options.milliseconds) args.push("--milliseconds");
+  if (options.maxCharsPerLine && options.maxCharsPerLine > 0) {
+    args.push("--max-chars-per-line", String(Math.round(options.maxCharsPerLine)));
+  }
+  if (options.fps && options.fps > 0) args.push("--fps", String(options.fps));
   if (options.persist ?? saveToHistory) args.push("--persist");
   return args;
 }
 
 /** Transcribes a single file and returns the transcript in the requested format. */
 export async function transcribeFile(path: string, options: TranscribeOptions = {}): Promise<string> {
-  const stdout = await runMw(["transcribe", ...transcribeArgs(options), "--", expandHome(path)]);
+  const { stdout } = await runMw(["transcribe", ...transcribeArgs(options), "--", expandHome(path)]);
   return stdout.trimEnd();
 }
 
@@ -127,19 +155,60 @@ export async function transcribeDirectory(directory: string, options: BatchOptio
   const args = ["transcribe", ...transcribeArgs(options), "--output-dir", expandHome(options.outputDir)];
   if (options.recursive) args.push("--recursive");
   if (options.overwrite) args.push("--overwrite");
+  const { stdout, stderr } = await runMw([...args, "--", expandHome(directory)]);
+  return `${stdout}\n${stderr}`
+    .split("\n")
+    .map((line) => line.trim())
+    .filter((line) => line.startsWith("Wrote "))
+    .map((line) => line.slice("Wrote ".length));
+}
+
+export type StreamHandle = {
+  /** Resolves with the full transcript once MacWhisper is done. */
+  done: Promise<string>;
+  cancel: () => void;
+};
+
+/** Streams plain-text transcript segments as MacWhisper finalizes them (`mw transcribe --stream`). */
+export function streamTranscription(
+  path: string,
+  options: Omit<TranscribeOptions, "format">,
+  onText: (text: string) => void,
+): StreamHandle {
   const binary = resolveBinary();
-  try {
-    const { stdout, stderr } = await execFileAsync(binary, [...args, "--", expandHome(directory)], {
-      maxBuffer: MAX_BUFFER,
+  const child = spawn(binary, ["transcribe", "--stream", ...transcribeArgs(options), "--", expandHome(path)]);
+  let stdout = "";
+  let stderr = "";
+  let cancelled = false;
+
+  child.stdout.setEncoding("utf8");
+  child.stderr.setEncoding("utf8");
+  child.stdout.on("data", (chunk: string) => {
+    stdout += chunk;
+    onText(stdout);
+  });
+  child.stderr.on("data", (chunk: string) => {
+    stderr += chunk;
+  });
+
+  const done = new Promise<string>((resolve, reject) => {
+    child.on("error", (error) => reject(new MacWhisperError(error.message)));
+    child.on("close", (code) => {
+      if (cancelled) reject(new MacWhisperError("Transcription cancelled"));
+      else if (code === 0) resolve(stdout.trimEnd());
+      else reject(new MacWhisperError(errorFromStderr(stderr, `mw exited with code ${code}`)));
     });
-    return `${stdout}\n${stderr}`
-      .split("\n")
-      .map((line) => line.trim())
-      .filter((line) => line.startsWith("Wrote "))
-      .map((line) => line.slice("Wrote ".length));
-  } catch (error) {
-    throw new MacWhisperError(extractErrorMessage(error));
-  }
+  });
+
+  return {
+    done,
+    cancel: () => {
+      if (child.exitCode === null) {
+        cancelled = true;
+        child.kill("SIGTERM");
+      }
+    },
+  };
 }
 
 /**
@@ -162,15 +231,28 @@ export function parseModels(output: string): Model[] {
 }
 
 export async function listModels(): Promise<Model[]> {
-  return parseModels(await runMw(["models", "list"]));
+  const { stdout } = await runMw(["models", "list"]);
+  return parseModels(stdout);
 }
 
 export async function selectModel(modelId: string): Promise<void> {
   await runMw(["models", "select", modelId]);
 }
 
+/** Finds a downloaded model by exact id, exact name, or a unique partial match on either. */
+export function findModel(models: Model[], query: string): { match?: Model; candidates: Model[] } {
+  const needle = query.trim().toLowerCase();
+  const exact = models.find((model) => model.id.toLowerCase() === needle || model.name.toLowerCase() === needle);
+  if (exact) return { match: exact, candidates: [exact] };
+  const candidates = models.filter(
+    (model) => model.id.toLowerCase().includes(needle) || model.name.toLowerCase().includes(needle),
+  );
+  return { match: candidates.length === 1 ? candidates[0] : undefined, candidates };
+}
+
 export async function getVersion(): Promise<string> {
-  return (await runMw(["version"])).trim();
+  const { stdout } = await runMw(["version"]);
+  return stdout.trim();
 }
 
 export function errorMessage(error: unknown): string {

@@ -1,5 +1,6 @@
 import { OutputFormat } from "./mw";
 
+/** Keep in sync with the `defaultLanguage` preference in package.json. */
 export const LANGUAGES: { code: string; title: string }[] = [
   { code: "auto", title: "Auto-detect" },
   { code: "en", title: "English" },
@@ -42,4 +43,15 @@ export function fromTriState(value: string): boolean | undefined {
   if (value === "on") return true;
   if (value === "off") return false;
   return undefined;
+}
+
+export function toTriState(value: boolean | undefined): TriState {
+  if (value === true) return "on";
+  if (value === false) return "off";
+  return "default";
+}
+
+export function parsePositiveNumber(value: string | undefined): number | undefined {
+  const parsed = Number(value?.trim());
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : undefined;
 }

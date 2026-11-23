@@ -1,20 +1,11 @@
-import { Clipboard, getSelectedFinderItems, showHUD, showToast, Toast } from "@raycast/api";
-import { statSync } from "node:fs";
+import { Clipboard, showHUD, showToast, Toast } from "@raycast/api";
 import { basename } from "node:path";
 import { combinedTranscript, TranscriptResult } from "./components/TranscriptDetail";
+import { selectedFinderFiles } from "./lib/files";
 import { errorMessage, transcribeFile } from "./lib/mw";
 
-async function selectedFiles(): Promise<string[]> {
-  try {
-    const items = await getSelectedFinderItems();
-    return items.map((item) => item.path).filter((path) => statSync(path).isFile());
-  } catch {
-    return [];
-  }
-}
-
 export default async function Command() {
-  const files = await selectedFiles();
+  const files = await selectedFinderFiles();
   if (files.length === 0) {
     await showToast({
       style: Toast.Style.Failure,
