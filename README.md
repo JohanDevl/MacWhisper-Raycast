@@ -8,7 +8,10 @@ The extension is a thin wrapper around the `mw` command-line tool that ships wit
 
 - macOS
 - MacWhisper 15.11 or later, with at least one downloaded model
-- The `mw` CLI, found automatically at `/usr/local/bin/mw` or inside `MacWhisper.app` (override it in the preferences)
+- The `mw` CLI, found automatically at `/usr/local/bin/mw` or inside `MacWhisper.app` wherever it is installed (override it in the preferences)
+
+MacWhisper does not need to be open: `mw` starts it on demand (a few seconds on the first call) and leaves it running.
+
 - Raycast Pro for **Summarize Recording**, **Chapters & Description**, **Translate Subtitles** and the `@macwhisper` AI tools
 
 ## Commands
