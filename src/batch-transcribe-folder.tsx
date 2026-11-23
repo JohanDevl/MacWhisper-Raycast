@@ -1,4 +1,4 @@
-import { Action, ActionPanel, Form, Icon, open, showToast, Toast } from "@raycast/api";
+import { Action, ActionPanel, Form, Icon, open, showToast, Toast, useNavigation } from "@raycast/api";
 import { usePromise } from "@raycast/utils";
 import { useState } from "react";
 import {
@@ -7,6 +7,7 @@ import {
   ModelDropdown,
   TriStateDropdown,
 } from "./components/TranscriptionOptionFields";
+import { BatchResultsView } from "./components/BatchResultsView";
 import { finderFolder } from "./lib/files";
 import { errorMessage, OutputFormat, transcribeDirectory } from "./lib/mw";
 import { fromTriState } from "./lib/options";
@@ -23,6 +24,7 @@ type FormValues = {
 };
 
 export default function Command() {
+  const { push } = useNavigation();
   const [isLoading, setIsLoading] = useState(false);
   const { data: initialFolder, isLoading: isLoadingFinder } = usePromise(finderFolder);
 
@@ -54,6 +56,7 @@ export default function Command() {
       toast.title = written.length === 1 ? "1 transcript written" : `${written.length} transcripts written`;
       toast.message = outputDir;
       toast.primaryAction = { title: "Open Output Folder", onAction: () => open(outputDir) };
+      push(<BatchResultsView files={written} format={values.format} sourceDir={folder} outputDir={outputDir} />);
     } catch (error) {
       toast.style = Toast.Style.Failure;
       toast.title = "Batch transcription failed";
