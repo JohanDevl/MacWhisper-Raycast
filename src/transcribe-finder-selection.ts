@@ -22,6 +22,12 @@ export default async function Command() {
       toast.message = `${index + 1}/${files.length} — ${basename(path)}`;
       results.push({ path, transcript: await transcribeFile(path) });
     }
+    if (results.every((result) => !result.transcript.trim())) {
+      toast.style = Toast.Style.Failure;
+      toast.title = "No speech detected";
+      toast.message = "Try another model or language.";
+      return;
+    }
     await Clipboard.copy(combinedTranscript(results));
     await showHUD(results.length === 1 ? "Transcript copied to clipboard" : `${results.length} transcripts copied`);
   } catch (error) {

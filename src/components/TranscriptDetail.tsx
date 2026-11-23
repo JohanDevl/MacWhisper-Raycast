@@ -33,10 +33,14 @@ async function saveNextToSource(result: TranscriptResult, format: OutputFormat) 
   }
 }
 
+const NO_SPEECH_MARKDOWN =
+  "_No speech detected. The file may contain only music or silence, or need another model or language._";
+
 function toMarkdown(results: TranscriptResult[], format: OutputFormat): string {
   return results
     .map((result) => {
       const heading = results.length > 1 ? `## ${basename(result.path)}\n\n` : "";
+      if (!result.transcript.trim()) return `${heading}${NO_SPEECH_MARKDOWN}`;
       const body =
         format === "md" || format === "txt" ? result.transcript : `\`\`\`${format}\n${result.transcript}\n\`\`\``;
       return `${heading}${body}`;
