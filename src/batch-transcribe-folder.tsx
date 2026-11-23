@@ -1,4 +1,5 @@
 import { Action, ActionPanel, Form, Icon, open, showToast, Toast } from "@raycast/api";
+import { usePromise } from "@raycast/utils";
 import { useState } from "react";
 import {
   FormatDropdown,
@@ -6,6 +7,7 @@ import {
   ModelDropdown,
   TriStateDropdown,
 } from "./components/TranscriptionOptionFields";
+import { finderFolder } from "./lib/files";
 import { errorMessage, OutputFormat, transcribeDirectory } from "./lib/mw";
 import { fromTriState } from "./lib/options";
 
@@ -22,6 +24,7 @@ type FormValues = {
 
 export default function Command() {
   const [isLoading, setIsLoading] = useState(false);
+  const { data: initialFolder, isLoading: isLoadingFinder } = usePromise(finderFolder);
 
   async function handleSubmit(values: FormValues) {
     const folder = values.folder[0];
@@ -60,6 +63,9 @@ export default function Command() {
     }
   }
 
+  // Wait for Finder so the folder field gets its default value on first render.
+  if (isLoadingFinder) return <Form isLoading />;
+
   return (
     <Form
       isLoading={isLoading}
@@ -69,12 +75,16 @@ export default function Command() {
         </ActionPanel>
       }
     >
+      {!initialFolder && (
+        <Form.Description text="Tip: open or select the folder in Finder before launching this command to fill it in." />
+      )}
       <Form.FilePicker
         id="folder"
         title="Folder"
         allowMultipleSelection={false}
         canChooseDirectories
         canChooseFiles={false}
+        defaultValue={initialFolder ? [initialFolder] : []}
       />
       <Form.Checkbox id="recursive" title="Subfolders" label="Include subfolders" defaultValue={false} storeValue />
       <Form.FilePicker

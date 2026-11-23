@@ -1,4 +1,5 @@
 import { Action, ActionPanel, Form, getPreferenceValues, Icon, showToast, Toast, useNavigation } from "@raycast/api";
+import { usePromise } from "@raycast/utils";
 import { useState } from "react";
 import { basename } from "node:path";
 import {
@@ -9,6 +10,7 @@ import {
 } from "./components/TranscriptionOptionFields";
 import { StreamingTranscriptView } from "./components/StreamingTranscriptView";
 import { TranscriptDetail, TranscriptResult } from "./components/TranscriptDetail";
+import { selectedFinderFiles } from "./lib/files";
 import { errorMessage, OutputFormat, transcribeFile } from "./lib/mw";
 import { fromTriState } from "./lib/options";
 
@@ -25,6 +27,7 @@ type FormValues = {
 export default function Command() {
   const { push } = useNavigation();
   const [isLoading, setIsLoading] = useState(false);
+  const { data: selection, isLoading: isLoadingFinder } = usePromise(selectedFinderFiles);
 
   async function handleSubmit(values: FormValues) {
     if (values.files.length === 0) {
@@ -77,6 +80,9 @@ export default function Command() {
     }
   }
 
+  // Wait for Finder so the file field gets its default value on first render.
+  if (isLoadingFinder) return <Form isLoading />;
+
   return (
     <Form
       isLoading={isLoading}
@@ -86,7 +92,13 @@ export default function Command() {
         </ActionPanel>
       }
     >
-      <Form.FilePicker id="files" title="Audio or Video" allowMultipleSelection canChooseDirectories={false} />
+      <Form.FilePicker
+        id="files"
+        title="Audio or Video"
+        allowMultipleSelection
+        canChooseDirectories={false}
+        defaultValue={selection ?? []}
+      />
       <ModelDropdown />
       <LanguageDropdown />
       <FormatDropdown />

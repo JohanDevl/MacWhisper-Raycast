@@ -1,4 +1,5 @@
 import { getSelectedFinderItems } from "@raycast/api";
+import { runAppleScript } from "@raycast/utils";
 import { statSync } from "node:fs";
 import { readdir, stat } from "node:fs/promises";
 import { basename, dirname, extname, join } from "node:path";
@@ -63,6 +64,35 @@ export async function selectedFinderFiles(): Promise<string[]> {
     return items.map((item) => item.path).filter((path) => isFile(path) && isMediaFile(path));
   } catch {
     return [];
+  }
+}
+
+const FRONT_FINDER_FOLDER_SCRIPT = `
+tell application "Finder"
+  if (count of Finder windows) is 0 then return ""
+  return POSIX path of (target of front Finder window as alias)
+end tell`;
+
+/**
+ * The folder selected in Finder, or the folder shown in the front Finder window when nothing is selected.
+ * Undefined when Finder is not frontmost. Lets folder commands skip the folder picker, which closes the form
+ * for users whose "Pop to Root Search" timeout is set to immediately.
+ */
+export async function finderFolder(): Promise<string | undefined> {
+  let selection: string[];
+  try {
+    selection = (await getSelectedFinderItems()).map((item) => item.path);
+  } catch {
+    return undefined;
+  }
+  const selectedFolder = selection.find(isDirectory);
+  if (selectedFolder) return selectedFolder;
+  if (selection.length > 0) return dirname(selection[0]);
+  try {
+    const frontFolder = (await runAppleScript(FRONT_FINDER_FOLDER_SCRIPT)).trim();
+    return frontFolder && isDirectory(frontFolder) ? frontFolder : undefined;
+  } catch {
+    return undefined;
   }
 }
 
