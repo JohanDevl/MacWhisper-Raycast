@@ -7,6 +7,7 @@ import {
   ModelDropdown,
   TriStateDropdown,
 } from "./components/TranscriptionOptionFields";
+import { StreamingTranscriptView } from "./components/StreamingTranscriptView";
 import { TranscriptDetail, TranscriptResult } from "./components/TranscriptDetail";
 import { errorMessage, OutputFormat, transcribeFile } from "./lib/mw";
 import { fromTriState } from "./lib/options";
@@ -28,6 +29,22 @@ export default function Command() {
   async function handleSubmit(values: FormValues) {
     if (values.files.length === 0) {
       await showToast({ style: Toast.Style.Failure, title: "Pick at least one file" });
+      return;
+    }
+
+    // A single plain-text transcript with default export options can be streamed as it is produced.
+    const canStream =
+      values.files.length === 1 &&
+      values.format === "txt" &&
+      values.speakers === "default" &&
+      values.timestamps === "default";
+    if (canStream) {
+      push(
+        <StreamingTranscriptView
+          path={values.files[0]}
+          options={{ model: values.model, language: values.language, persist: values.persist }}
+        />,
+      );
       return;
     }
 

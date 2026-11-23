@@ -201,6 +201,9 @@ export async function transcribeDirectory(directory: string, options: BatchOptio
     .map((line) => line.slice("Wrote ".length));
 }
 
+/** `--stream` refuses export options (format, style, timestamps, speakers); only these are allowed. */
+export type StreamOptions = Pick<TranscribeOptions, "model" | "language" | "persist">;
+
 export type StreamHandle = {
   /** Resolves with the full transcript once MacWhisper is done. */
   done: Promise<string>;
@@ -210,11 +213,13 @@ export type StreamHandle = {
 /** Streams plain-text transcript segments as MacWhisper finalizes them (`mw transcribe --stream`). */
 export function streamTranscription(
   path: string,
-  options: Omit<TranscribeOptions, "format">,
+  options: StreamOptions,
   onText: (text: string) => void,
 ): StreamHandle {
   const binary = resolveBinary();
-  const child = spawn(binary, ["transcribe", "--stream", ...transcribeArgs(options), "--", expandHome(path)]);
+  const { model, language, persist } = options;
+  const args = transcribeArgs({ model, language, persist });
+  const child = spawn(binary, ["transcribe", "--stream", ...args, "--", expandHome(path)]);
   let stdout = "";
   let stderr = "";
   let cancelled = false;

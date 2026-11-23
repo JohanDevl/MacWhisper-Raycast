@@ -1,12 +1,13 @@
 import { Action, ActionPanel, Detail, Icon, showToast, Toast } from "@raycast/api";
 import { useEffect, useRef, useState } from "react";
 import { basename } from "node:path";
-import { errorMessage, StreamHandle, streamTranscription } from "../lib/mw";
+import { errorMessage, StreamHandle, StreamOptions, streamTranscription } from "../lib/mw";
 import { TranscriptDetail } from "./TranscriptDetail";
 
 type Status = "running" | "done" | "failed" | "stopped";
 
-export function LiveTranscriptView({ path }: { path: string }) {
+/** Shows a single plain-text transcript as MacWhisper finalizes it, then the regular transcript view. */
+export function StreamingTranscriptView({ path, options = {} }: { path: string; options?: StreamOptions }) {
   const [text, setText] = useState("");
   const [status, setStatus] = useState<Status>("running");
   const [failure, setFailure] = useState<string>();
@@ -15,7 +16,7 @@ export function LiveTranscriptView({ path }: { path: string }) {
   useEffect(() => {
     let active = true;
     try {
-      handle.current = streamTranscription(path, {}, (current) => {
+      handle.current = streamTranscription(path, options, (current) => {
         if (active) setText(current);
       });
     } catch (error) {
@@ -39,6 +40,7 @@ export function LiveTranscriptView({ path }: { path: string }) {
       active = false;
       handle.current?.cancel();
     };
+    // Options are fixed for the lifetime of this view, so only the path restarts the stream.
   }, [path]);
 
   function stop() {
@@ -52,7 +54,7 @@ export function LiveTranscriptView({ path }: { path: string }) {
 
   const banner =
     status === "running"
-      ? "_Transcribing live: segments appear as MacWhisper finalizes them._"
+      ? "_Transcribing: text appears as MacWhisper finalizes it._"
       : status === "stopped"
         ? "_Stopped. The transcript below is partial._"
         : `**Transcription failed:** ${failure ?? "unknown error"}`;

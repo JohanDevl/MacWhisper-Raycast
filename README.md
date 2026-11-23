@@ -1,6 +1,6 @@
 # MacWhisper for Raycast
 
-Transcribe audio and video files on-device with [MacWhisper](https://goodsnooze.gumroad.com/l/macwhisper) straight from Raycast: subtitles and their translation, meeting notes, chapters, live transcripts, AI summaries, folder watching, export presets, model switching, and Raycast AI tools.
+Transcribe audio and video files on-device with [MacWhisper](https://goodsnooze.gumroad.com/l/macwhisper) straight from Raycast: subtitles and their translation, meeting notes, chapters, AI summaries, folder watching, export presets, model switching, and Raycast AI tools.
 
 The extension is a thin wrapper around the `mw` command-line tool that ships with MacWhisper (15.11+).
 
@@ -24,7 +24,6 @@ MacWhisper does not need to be open: `mw` starts it on demand (a few seconds on 
 | **Transcribe Finder Selection** | Transcribe the audio/video files selected in Finder and copy the transcript.                                                                                                                                          |
 | **Transcribe Clipboard File**   | Transcribe the file copied with ⌘C in Finder and put the transcript in the clipboard.                                                                                                                                 |
 | **Transcribe Latest Recording** | Transcribe the newest audio/video file in your recording folders.                                                                                                                                                     |
-| **Live Transcript**             | Watch a long recording's transcript appear segment by segment (`--stream`).                                                                                                                                           |
 | **Batch Transcribe Folder**     | Transcribe a whole folder (optionally recursive) into transcript or subtitle files.                                                                                                                                   |
 | **Watch Folder**                | Background command: once started, new recordings added to a folder get a transcript next to them (checked every 10 minutes; existing files are left alone and MacWhisper is only called when there is something new). |
 

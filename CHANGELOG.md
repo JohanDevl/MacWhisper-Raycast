@@ -2,7 +2,7 @@
 
 ## [Initial Version] - {PR_MERGE_DATE}
 
-- Transcribe File, Transcribe Finder Selection, Transcribe Clipboard File, Transcribe Latest Recording, Live Transcript and Batch Transcribe Folder commands
+- Transcribe File, Transcribe Finder Selection, Transcribe Clipboard File, Transcribe Latest Recording and Batch Transcribe Folder commands; Transcribe File streams single plain-text transcripts as they are produced
 - Summarize Recording (Raycast AI), Meeting Notes, Chapters & Description, Generate Subtitles, Translate Subtitles and Export Presets commands
 - Watch Folder background command
 - Manage Models, Switch Model and Active Model (menu bar) commands

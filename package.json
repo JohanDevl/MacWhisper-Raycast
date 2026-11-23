@@ -2,7 +2,7 @@
   "$schema": "https://www.raycast.com/schemas/extension.json",
   "name": "macwhisper",
   "title": "MacWhisper",
-  "description": "Transcribe audio and video on-device with MacWhisper: subtitles and translations, meeting notes, chapters, live transcripts, AI summaries, folder watching and Raycast AI tools.",
+  "description": "Transcribe audio and video on-device with MacWhisper: subtitles and translations, meeting notes, chapters, AI summaries, folder watching and Raycast AI tools.",
   "icon": "extension-icon.png",
   "author": "xjo_nd",
   "platforms": [
@@ -50,13 +50,6 @@
       "title": "Transcribe Latest Recording",
       "subtitle": "MacWhisper",
       "description": "Transcribe the newest audio or video file from your recording folders.",
-      "mode": "view"
-    },
-    {
-      "name": "live-transcript",
-      "title": "Live Transcript",
-      "subtitle": "MacWhisper",
-      "description": "Watch the transcript of a long recording appear segment by segment.",
       "mode": "view"
     },
     {
