@@ -1,5 +1,6 @@
 import { Action, ActionPanel, Form, Icon, open, showToast, Toast } from "@raycast/api";
 import { usePromise } from "@raycast/utils";
+import { homedir } from "node:os";
 import { useState } from "react";
 import {
   FormatDropdown,
@@ -7,13 +8,13 @@ import {
   ModelDropdown,
   TriStateDropdown,
 } from "./components/TranscriptionOptionFields";
-import { finderFolder } from "./lib/files";
-import { errorMessage, OutputFormat, transcribeDirectory } from "./lib/mw";
+import { finderFolder, isDirectory } from "./lib/files";
+import { errorMessage, expandHome, OutputFormat, transcribeDirectory } from "./lib/mw";
 import { fromTriState } from "./lib/options";
 
 type FormValues = {
-  folder: string[];
-  outputFolder: string[];
+  folder: string;
+  outputFolder: string;
   recursive: boolean;
   overwrite: boolean;
   model: string;
@@ -22,17 +23,31 @@ type FormValues = {
   speakers: string;
 };
 
+/** Shows paths under the home folder as `~/…`, the way they can be typed back. */
+function displayPath(path: string): string {
+  const home = homedir();
+  return path === home || path.startsWith(`${home}/`) ? `~${path.slice(home.length)}` : path;
+}
+
+// Folders are typed paths rather than Form.FilePicker: the macOS open panel hides Raycast, and users whose
+// "Pop to Root Search" timeout is set to immediately lose the whole form when it closes.
 export default function Command() {
   const [isLoading, setIsLoading] = useState(false);
+  const [folderError, setFolderError] = useState<string>();
+  const [outputError, setOutputError] = useState<string>();
   const { data: initialFolder, isLoading: isLoadingFinder } = usePromise(finderFolder);
 
   async function handleSubmit(values: FormValues) {
-    const folder = values.folder[0];
-    if (!folder) {
-      await showToast({ style: Toast.Style.Failure, title: "Pick a folder to transcribe" });
+    const folder = expandHome(values.folder.trim());
+    const outputDir = values.outputFolder.trim() ? expandHome(values.outputFolder.trim()) : folder;
+    const nextFolderError = !folder ? "Enter a folder" : isDirectory(folder) ? undefined : "Folder not found";
+    const nextOutputError = isDirectory(outputDir) || outputDir === folder ? undefined : "Folder not found";
+    setFolderError(nextFolderError);
+    setOutputError(nextOutputError);
+    if (nextFolderError || nextOutputError) {
+      await showToast({ style: Toast.Style.Failure, title: nextFolderError ?? "Output folder not found" });
       return;
     }
-    const outputDir = values.outputFolder[0] ?? folder;
 
     setIsLoading(true);
     const toast = await showToast({
@@ -75,25 +90,23 @@ export default function Command() {
         </ActionPanel>
       }
     >
-      {!initialFolder && (
-        <Form.Description text="Tip: open or select the folder in Finder before launching this command to fill it in." />
-      )}
-      <Form.FilePicker
+      <Form.TextField
         id="folder"
         title="Folder"
-        allowMultipleSelection={false}
-        canChooseDirectories
-        canChooseFiles={false}
-        defaultValue={initialFolder ? [initialFolder] : []}
+        placeholder="~/Movies/Interviews"
+        info="Open or select a folder in Finder before launching this command to fill it in."
+        defaultValue={initialFolder ? displayPath(initialFolder) : ""}
+        error={folderError}
+        onChange={() => setFolderError(undefined)}
       />
       <Form.Checkbox id="recursive" title="Subfolders" label="Include subfolders" defaultValue={false} storeValue />
-      <Form.FilePicker
+      <Form.TextField
         id="outputFolder"
         title="Output Folder"
-        info="Defaults to the source folder"
-        allowMultipleSelection={false}
-        canChooseDirectories
-        canChooseFiles={false}
+        placeholder="Same as the source folder"
+        info="Leave empty to write the transcripts next to the recordings."
+        error={outputError}
+        onChange={() => setOutputError(undefined)}
       />
       <FormatDropdown defaultValue="srt" />
       <Form.Checkbox

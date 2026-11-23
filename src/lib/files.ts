@@ -89,7 +89,7 @@ export async function finderFolder(): Promise<string | undefined> {
   if (selectedFolder) return selectedFolder;
   if (selection.length > 0) return dirname(selection[0]);
   try {
-    const frontFolder = (await runAppleScript(FRONT_FINDER_FOLDER_SCRIPT)).trim();
+    const frontFolder = (await runAppleScript(FRONT_FINDER_FOLDER_SCRIPT)).trim().replace(/(.)\/$/, "$1");
     return frontFolder && isDirectory(frontFolder) ? frontFolder : undefined;
   } catch {
     return undefined;
