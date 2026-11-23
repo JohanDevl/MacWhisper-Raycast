@@ -23,11 +23,19 @@ export const AI_TASKS = {
     prompt:
       "Draft a short, friendly follow-up email based on this recording: thank the participants, recap the decisions and list the next steps.",
   },
+  chapters: {
+    title: "Chapters & Description",
+    prompt:
+      "This transcript has a timestamp before each segment. Write, in this order: 1) three title ideas; 2) a two-paragraph description for YouTube or a podcast feed; 3) a chapter list in the YouTube format (one `MM:SS Title` per line, or `H:MM:SS` past one hour), starting at 00:00, 5 to 12 chapters, at least 30 seconds apart, using only timestamps that appear in the transcript; 4) 8 to 12 comma-separated tags.",
+  },
   custom: {
     title: "Custom Prompt",
     prompt: "",
   },
 } as const;
+
+/** Tasks whose prompt relies on per-segment timestamps in the transcript. */
+export const TIMESTAMPED_TASKS: ReadonlySet<string> = new Set(["chapters"]);
 
 export type AITaskId = keyof typeof AI_TASKS;
 

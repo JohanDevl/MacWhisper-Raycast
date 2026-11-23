@@ -1,8 +1,8 @@
 import { Action, ActionPanel, AI, Detail, environment, Icon, Keyboard } from "@raycast/api";
 import { showFailureToast, useAI, usePromise } from "@raycast/utils";
 import { basename } from "node:path";
-import { AI_TASKS, AITaskId, buildPrompt } from "../lib/ai-tasks";
-import { errorMessage, transcribeFile } from "../lib/mw";
+import { AI_TASKS, AITaskId, buildPrompt, TIMESTAMPED_TASKS } from "../lib/ai-tasks";
+import { errorMessage, transcribeFile, TranscribeOptions } from "../lib/mw";
 import { combinedTranscript, TranscriptDetail, TranscriptResult } from "./TranscriptDetail";
 
 type Props = {
@@ -12,15 +12,16 @@ type Props = {
   customPrompt?: string;
 };
 
-async function transcribeAll(paths: string[]): Promise<TranscriptResult[]> {
+async function transcribeAll(paths: string[], timestamped: boolean): Promise<TranscriptResult[]> {
+  const options: TranscribeOptions = timestamped ? { format: "txt", style: "segments", timestamps: true } : {};
   const results: TranscriptResult[] = [];
-  for (const path of paths) results.push({ path, transcript: await transcribeFile(path) });
+  for (const path of paths) results.push({ path, transcript: await transcribeFile(path, options) });
   return results;
 }
 
 export function RecordingAIView({ paths, task, language, customPrompt }: Props) {
   const canUseAI = environment.canAccess(AI);
-  const transcription = usePromise(transcribeAll, [paths], {
+  const transcription = usePromise(transcribeAll, [paths, TIMESTAMPED_TASKS.has(task)], {
     onError: (error) => {
       showFailureToast(error, { title: "Transcription failed" });
     },

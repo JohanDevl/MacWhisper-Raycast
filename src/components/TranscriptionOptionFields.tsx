@@ -22,10 +22,10 @@ export function ModelDropdown() {
 }
 
 /** Defaults to the Default Language preference (Auto-detect out of the box). */
-export function LanguageDropdown() {
+export function LanguageDropdown({ title = "Language" }: { title?: string }) {
   const { defaultLanguage } = getPreferenceValues<Preferences>();
   return (
-    <Form.Dropdown id="language" title="Language" defaultValue={defaultLanguage || "auto"}>
+    <Form.Dropdown id="language" title={title} defaultValue={defaultLanguage || "auto"}>
       {LANGUAGES.map((language) => (
         <Form.Dropdown.Item key={language.code} value={language.code} title={language.title} />
       ))}

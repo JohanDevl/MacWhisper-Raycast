@@ -1,14 +1,21 @@
 import { getPreferenceValues } from "@raycast/api";
-import { execFile, spawn } from "node:child_process";
+import { execFile, execFileSync, spawn } from "node:child_process";
 import { existsSync } from "node:fs";
 import { homedir } from "node:os";
+import { join } from "node:path";
 import { promisify } from "node:util";
 
 const execFileAsync = promisify(execFile);
 
 export const MACWHISPER_BUNDLE_ID = "com.goodsnooze.MacWhisper";
 
-const CANDIDATE_BINARIES = ["/usr/local/bin/mw", "/Applications/MacWhisper.app/Contents/MacOS/mw"];
+const CLI_SYMLINK = "/usr/local/bin/mw";
+const APP_CLI_RELATIVE_PATH = "Contents/MacOS/mw";
+const COMMON_APP_PATHS = [
+  "/Applications/MacWhisper.app",
+  join(homedir(), "Applications/MacWhisper.app"),
+  "/Applications/Setapp/MacWhisper.app",
+];
 
 const MAX_BUFFER = 100 * 1024 * 1024;
 
@@ -70,6 +77,30 @@ export function expandHome(path: string): string {
   return path;
 }
 
+/** MacWhisper.app bundles: the usual locations first, then Spotlight by bundle id. */
+function findAppBundles(): string[] {
+  const found = COMMON_APP_PATHS.filter((path) => existsSync(path));
+  if (found.length > 0) return found;
+  try {
+    const output = execFileSync("mdfind", [`kMDItemCFBundleIdentifier == '${MACWHISPER_BUNDLE_ID}'`], {
+      encoding: "utf8",
+      timeout: 3000,
+    });
+    return output
+      .split("\n")
+      .map((line) => line.trim())
+      .filter((line) => line.endsWith(".app"));
+  } catch {
+    return [];
+  }
+}
+
+let cachedBinary: string | undefined;
+
+/**
+ * Locates the `mw` CLI: the preference override, the `/usr/local/bin/mw` symlink, then the copy inside MacWhisper.app
+ * wherever the app is installed. Distinguishes "MacWhisper missing" from "MacWhisper too old to ship the CLI".
+ */
 export function resolveBinary(): string {
   const { mwPath } = getPreferenceValues<Preferences>();
   const custom = mwPath?.trim();
@@ -78,11 +109,18 @@ export function resolveBinary(): string {
     if (existsSync(expanded)) return expanded;
     throw new MacWhisperError(`The mw CLI was not found at "${custom}". Check the extension preferences.`);
   }
-  const found = CANDIDATE_BINARIES.find((candidate) => existsSync(candidate));
-  if (!found) {
-    throw new MacWhisperError("MacWhisper is not installed. Install MacWhisper 15.11 or later to get the mw CLI.");
+  if (cachedBinary && existsSync(cachedBinary)) return cachedBinary;
+  if (existsSync(CLI_SYMLINK)) return (cachedBinary = CLI_SYMLINK);
+
+  const apps = findAppBundles();
+  const bundled = apps.map((app) => join(app, APP_CLI_RELATIVE_PATH)).find((path) => existsSync(path));
+  if (bundled) return (cachedBinary = bundled);
+  if (apps.length > 0) {
+    throw new MacWhisperError(
+      "This version of MacWhisper has no command-line tool. Update MacWhisper to 15.11 or later.",
+    );
   }
-  return found;
+  throw new MacWhisperError("MacWhisper is not installed. Install MacWhisper 15.11 or later.");
 }
 
 function errorFromStderr(stderr: string, fallback: string): string {
